@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubuntu-Style Shell Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Ubuntu Mono', 'Courier New', monospace;
+            background: #0a0e27;
+            color: #f2f2f2;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 0;
+        }
+        
+        .terminal {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0f1419;
+            border-right: 2px solid #1e3a5f;
+        }
+        
+        .terminal-header {
+            padding: 12px 16px;
+            background: #1a2332;
+            border-bottom: 1px solid #1e3a5f;
+            font-weight: bold;
+            color: #4dd9ff;
+        }
+        
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .cmd-output {
+            margin-bottom: 12px;
+        }
+        
+        .cmd-line {
+            color: #4dd9ff;
+            font-weight: bold;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .prompt {
+            color: #4dd9ff;
+        }
+        
+        .cmd-text {
+            color: #f2f2f2;
+        }
+        
+        .output-text {
+            color: #e0e0e0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-left: 0;
+            margin-top: 4px;
+        }
+        
+        .error-text {
+            color: #ff6b6b;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-top: 4px;
+        }
+        
+        .terminal-input {
+            display: flex;
+            gap: 0;
+            padding: 12px 16px;
+            background: #1a2332;
+            border-top: 1px solid #1e3a5f;
+            align-items: center;
+        }
+        
+        .prompt-text {
+            color: #4dd9ff;
+            font-weight: bold;
+            white-space: nowrap;
+            min-width: 80px;
+        }
+        
+        .input-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #f2f2f2;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 0 8px;
+        }
+        
+        .input-field::placeholder {
+            color: #666;
+        }
+        
+        .run-button {
+            background: #1e3a5f;
+            color: #4dd9ff;
+            border: 1px solid #4dd9ff;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            margin-left: 8px;
+            transition: all 0.2s;
+        }
+        
+        .run-button:hover {
+            background: #4dd9ff;
+            color: #0f1419;
+        }
+        
+        .sidebar {
+            width: 340px;
+            background: #0a0e27;
+            border-left: 2px solid #1e3a5f;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .panel {
+            background: #1a2332;
+            border: 1px solid #1e3a5f;
+            border-radius: 4px;
+            padding: 12px;
+        }
+        
+        .panel-title {
+            color: #4dd9ff;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .tree-view {
+            font-size: 11px;
+            color: #b0b0b0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .tree-item {
+            margin: 2px 0;
+            padding: 2px 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .tree-item.current {
+            color: #4dd9ff;
+            background: #1e3a5f;
+            border-radius: 2px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #1e3a5f;
+            font-size: 11px;
+        }
+        
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            color: #888;
+        }
+        
+        .stat-value {
+            color: #4dd9ff;
+            font-weight: bold;
+        }
+        
+        .cmd-list {
+            font-size: 10px;
+            line-height: 1.8;
+            color: #b0b0b0;
+        }
+        
+        .cmd-list code {
+            color: #4dd9ff;
+            background: rgba(77, 217, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-family: inherit;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .action-button {
+            flex: 1;
+            min-width: 140px;
+            background: #1e3a5f;
+            color: #4dd9ff;
+            border: 1px solid #1e3a5f;
+            padding: 6px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .action-button:hover {
+            background: #4dd9ff;
+            color: #0a0e27;
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #0f1419;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #1e3a5f;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4dd9ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Terminal Panel -->
+        <div class="terminal">
+            <div class="terminal-header">🖥️ Terminal</div>
+            <div class="terminal-output" id="outputArea"></div>
+            <div class="terminal-input">
+                <span class="prompt-text" id="promptDisplay">ubuntu$</span>
+                <input type="text" class="input-field" id="cmdInput" placeholder="Enter command...">
+                <button class="run-button" id="runBtn">Execute</button>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Filesystem Info -->
+            <div class="panel">
+                <div class="panel-title">📁 Filesystem</div>
+                <div id="fsTree" class="tree-view"></div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="panel">
+                <div class="panel-title">📊 Statistics</div>
+                <div class="stat-row">
+                    <span class="stat-label">Current Dir:</span>
+                    <span class="stat-value" id="cwdDisplay">/</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Directories:</span>
+                    <span class="stat-value" id="dirCount">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Files:</span>
+                    <span class="stat-value" id="fileCount">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Commands Run:</span>
+                    <span class="stat-value" id="cmdCount">0</span>
+                </div>
+            </div>
+            
+            <!-- Command Reference -->
+            <div class="panel">
+                <div class="panel-title">💡 Commands</div>
+                <div class="cmd-list">
+                    <div><code>ls</code> - list files</div>
+                    <div><code>cd DIR</code> - change dir</div>
+                    <div><code>pwd</code> - print dir</div>
+                    <div><code>cat FILE</code> - show file</div>
+                    <div><code>mkdir DIR</code> - new folder</div>
+                    <div><code>touch FILE</code> - new file</div>
+                    <div><code>echo TEXT</code> - print text</div>
+                    <div><code>echo > FILE</code> - write file</div>
+                    <div><code>grep PATTERN</code> - search text</div>
+                    <div><code>rm FILE</code> - delete file</div>
+                    <div><code>find PATTERN</code> - search all</div>
+                    <div><code>wc FILE</code> - word/line count</div>
+                    <div><code>mv SRC DST</code> - move/rename</div>
+                    <div><code>clear / cls</code> - clear screen</div>
+                    <div><code>cmd | cmd2</code> - pipe output</div>
+                                    <div><code>sh SCRIPT</code> - run script</div>
+                                    <div><code>./SCRIPT.sh</code> - execute script</div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="panel">
+                <div class="button-group">
+                    <button class="action-button" id="resetBtn">🔄 Reset</button>
+                    <button class="action-button" id="clearBtn">🗑️ Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            // Initialize filesystem
+            const createFS = () => ({
+                '/': {
+                    type: 'dir',
+                    children: {
+                        'home': {
+                            type: 'dir',
+                            children: {
+                                'ubuntu': {
+                                    type: 'dir',
+                                    children: {
+                                        'documents': {
+                                            type: 'dir',
+                                            children: {
+                                                'readme.txt': { type: 'file', content: 'Welcome to Shell\nA mini shell simulator\n' },
+                                                'notes.txt': { type: 'file', content: 'Add notes here\n' }
+                                            }
+                                        },
+                                        'shell.md': { type: 'file', content: '# Shell Project\n' }
+                                    }
+                                }
+                            }
+                        },
+                        'etc': {
+                            type: 'dir',
+                            children: {
+                                'config': { type: 'file', content: '[System Config]\n' }
+                            }
+                        },
+                        'var': {
+                            type: 'dir',
+                            children: {
+                                'log': { type: 'file', content: 'System started\n' }
+                            }
+                        }
+                    }
+                }
+            });
+
+            let fs = createFS();
+            let cwd = '/';
+            let cmdCount = 0;
+            let cmdHistory = [];
+            let historyIndex = -1;
+
+            // Load/Save filesystem
+            function loadFS() {
+                const saved = localStorage.getItem('shellFS');
+                if (saved) {
+                    try {
+                        fs = JSON.parse(saved);
+                    } catch (e) {
+                        console.error('Load error:', e);
+                    }
+                }
+            }
+
+            function saveFS() {
+                try {
+                    localStorage.setItem('shellFS', JSON.stringify(fs));
+                } catch (e) {
+                    console.error('Save error:', e);
+                }
+            }
+
+            // Filesystem navigation
+            function getNode(path) {
+                if (path === '/') return fs['/'];
+                const parts = path.split('/').filter(p => p);
+                let node = fs['/'];
+                for (const part of parts) {
+                    if (!node.children || !node.children[part]) return null;
+                    node = node.children[part];
+                }
+                return node;
+            }
+
+            function resolvePath(relPath) {
+                if (relPath === '~') return '/home/ubuntu';
+                if (relPath.startsWith('~/')) return '/home/ubuntu' + relPath.slice(1);
+                if (relPath.startsWith('/')) return relPath;
+                if (relPath === '.') return cwd;
+                if (relPath === '..') {
+                    if (cwd === '/') return '/';
+                    const parts = cwd.split('/').filter(p => p);
+                    parts.pop();
+                    return parts.length ? '/' + parts.join('/') : '/';
+                }
+                return cwd === '/' ? '/' + relPath : cwd + '/' + relPath;
+            }
+
+            function renderTree(node, prefix = '', path = '/') {
+                if (!node || node.type !== 'dir') return '';
+                let html = '';
+                const entries = Object.entries(node.children || {});
+                entries.forEach(([ name, child ], idx) => {
+                    const isLast = idx === entries.length - 1;
+                    const icon = child.type === 'dir' ? '📁' : '📄';
+                    const childPath = path === '/' ? '/' + name : path + '/' + name;
+                    const isCurrent = childPath === cwd ? ' current' : '';
+                    html += `<div class="tree-item${isCurrent}">${prefix}${icon} ${name}</div>`;
+                    if (child.type === 'dir') {
+                        const ext = isLast ? '  ' : '│ ';
+                        html += renderTree(child, prefix + ext, childPath);
+                    }
+                });
+                return html;
+            }
+
+            function countItems(node) {
+                if (!node || node.type !== 'dir') return { dirs: 0, files: 0 };
+                let dirs = 0, files = 0;
+                Object.values(node.children || {}).forEach(child => {
+                    if (child.type === 'dir') {
+                        dirs++;
+                        const sub = countItems(child);
+                        dirs += sub.dirs;
+                        files += sub.files;
+                    } else {
+                        files++;
+                    }
+                });
+                return { dirs, files };
+            }
+
+            function updateDisplay() {
+                // Update tree
+                document.getElementById('fsTree').innerHTML = renderTree(fs['/']);
+                
+                // Update stats
+                const stats = countItems(fs['/']);
+                document.getElementById('cwdDisplay').textContent = cwd;
+                document.getElementById('dirCount').textContent = stats.dirs;
+                document.getElementById('fileCount').textContent = stats.files;
+                document.getElementById('cmdCount').textContent = cmdCount;
+                
+                // Update prompt
+                const displayPath = cwd === '/' ? 'ubuntu' : cwd.substring(1);
+                document.getElementById('promptDisplay').textContent = displayPath + '$';
+            }
+
+            function tokenize(cmd) {
+                const args = [];
+                let current = '';
+                let inQuote = false;
+                let quoteChar = '';
+                for (let i = 0; i < cmd.length; i++) {
+                    const ch = cmd[i];
+                    const nextCh = cmd[i + 1];
+                    
+                    if ((ch === '"' || ch === "'") && !inQuote) {
+                        inQuote = true;
+                        quoteChar = ch;
+                    } else if (ch === quoteChar && inQuote) {
+                        inQuote = false;
+                        quoteChar = '';
+                    } else if (!inQuote && ch === '>' && nextCh === '>') {
+                        // >> redirection
+                        if (current) {
+                            args.push(current);
+                            current = '';
+                        }
+                        args.push('>>');
+                        i++; // skip next >
+                    } else if (!inQuote && ch === '>') {
+                        // > redirection
+                        if (current) {
+                            args.push(current);
+                            current = '';
+                        }
+                        args.push('>');
+                    } else if (ch === ' ' && !inQuote) {
+                        if (current) {
+                            args.push(current);
+                            current = '';
+                        }
+                    } else {
+                        current += ch;
+                    }
+                }
+                if (current) args.push(current);
+                return args;
+            }
+
+            function splitPipe(line) {
+                const parts = [];
+                let current = '';
+                let inQuote = false;
+                for (let i = 0; i < line.length; i++) {
+                    const ch = line[i];
+                    if (ch === '"' || ch === "'") {
+                        inQuote = !inQuote;
+                        current += ch;
+                    } else if (ch === '|' && !inQuote) {
+                        if (current.trim()) parts.push(current.trim());
+                        current = '';
+                    } else {
+                        current += ch;
+                    }
+                }
+                if (current.trim()) parts.push(current.trim());
+                return parts;
+            }
+
+            function executeCommand(cmd, input = '') {
+                const parts = tokenize(cmd);
+                if (!parts.length) return { out: '', err: '' };
+
+                const cmdName = parts[0];
+                const args = parts.slice(1);
+
+                // Check for redirection
+                let redirectFile = null;
+                let redirectAppend = false;
+                let cleanArgs = [];
+                for (let i = 0; i < args.length; i++) {
+                    if (args[i] === '>' || args[i] === '>>') {
+                        redirectAppend = args[i] === '>>';
+                        redirectFile = args[i + 1];
+                        break;
+                    }
+                    cleanArgs.push(args[i]);
+                }
+
+                let output = '';
+                try {
+                    if (cmdName === 'ls') {
+                        const node = getNode(cwd);
+                        if (!node || node.type !== 'dir') throw new Error('ls: not a directory');
+                        const items = Object.entries(node.children || {});
+                        output = items.map(([ name, child ]) => {
+                            const icon = child.type === 'dir' ? '📁' : '📄';
+                            return `${icon} ${name}`;
+                        }).join('\n');
+                        if (output) output += '\n';
+                    } else if (cmdName === 'pwd') {
+                        output = cwd + '\n';
+                    } else if (cmdName === 'cd') {
+                        if (!cleanArgs.length) {
+                            cwd = '/home/ubuntu';
+                        } else {
+                            const target = resolvePath(cleanArgs[0]);
+                            const node = getNode(target);
+                            if (!node) throw new Error(`cd: ${cleanArgs[0]}: No such file or directory`);
+                            if (node.type !== 'dir') throw new Error(`cd: ${cleanArgs[0]}: Not a directory`);
+                            cwd = target;
+                        }
+                        output = '';
+                    } else if (cmdName === 'cat') {
+                        if (!cleanArgs.length) {
+                            output = input;
+                        } else {
+                            const filePath = resolvePath(cleanArgs[0]);
+                            const node = getNode(filePath);
+                            if (!node) throw new Error(`cat: ${cleanArgs[0]}: No such file or directory`);
+                            if (node.type !== 'file') throw new Error(`cat: ${cleanArgs[0]}: Is a directory`);
+                            output = node.content;
+                        }
+                        if (!output.endsWith('\n')) output += '\n';
+                    } else if (cmdName === 'echo') {
+                        output = cleanArgs.join(' ') + '\n';
+                    } else if (cmdName === 'mkdir') {
+                        if (!cleanArgs.length) throw new Error('mkdir: missing directory');
+                        const node = getNode(cwd);
+                        if (!node) throw new Error('mkdir: current directory not found');
+                        if (!node.children) node.children = {};
+                        if (node.children[cleanArgs[0]]) throw new Error(`mkdir: ${cleanArgs[0]}: already exists`);
+                        node.children[cleanArgs[0]] = { type: 'dir', children: {} };
+                        output = '';
+                    } else if (cmdName === 'touch') {
+                        if (!cleanArgs.length) throw new Error('touch: missing filename');
+                        const node = getNode(cwd);
+                        if (!node) throw new Error('touch: current directory not found');
+                        if (!node.children) node.children = {};
+                        if (!node.children[cleanArgs[0]]) {
+                            node.children[cleanArgs[0]] = { type: 'file', content: '' };
+                        }
+                        output = '';
+                    } else if (cmdName === 'grep') {
+                        if (!cleanArgs.length) throw new Error('grep: missing pattern');
+                        const pattern = cleanArgs[0];
+                        output = input.split('\n').filter(line => line.includes(pattern)).join('\n');
+                        if (output) output += '\n';
+                    } else if (cmdName === 'find') {
+                        if (!cleanArgs.length) throw new Error('find: missing pattern');
+                        const pattern = cleanArgs[0];
+                        const results = [];
+                        function search(node, path) {
+                            if (!node || node.type !== 'dir') return;
+                            Object.entries(node.children || {}).forEach(([ name, child ]) => {
+                                const fullPath = path === '/' ? '/' + name : path + '/' + name;
+                                if (name.includes(pattern)) {
+                                    results.push(fullPath);
+                                }
+                                if (child.type === 'dir') search(child, fullPath);
+                            });
+                        }
+                        search(fs['/'], '/');
+                        output = results.length ? results.join('\n') + '\n' : '';
+                    } else if (cmdName === 'wc') {
+                        // Separate options from filenames
+                        const options = cleanArgs.filter(arg => arg.startsWith('-'));
+                        const files = cleanArgs.filter(arg => !arg.startsWith('-'));
+                        
+                        let lines = 0, words = 0, chars = 0;
+                        let text = '';
+                        
+                        if (files.length > 0) {
+                            // Read from file
+                            const filePath = resolvePath(files[0]);
+                            const node = getNode(filePath);
+                            if (!node) throw new Error(`wc: cannot access '${files[0]}'`);
+                            if (node.type !== 'file') throw new Error(`wc: '${files[0]}': Is a directory`);
+                            text = node.content;
+                        } else {
+                            // Use piped input
+                            text = input;
+                        }
+                        
+                        lines = text.split('\n').filter(l => l.trim()).length;
+                        words = text.split(/\s+/).filter(w => w).length;
+                        chars = text.length;
+                        
+                        if (options.includes('-l')) {
+                            output = lines + '\n';
+                        } else if (options.includes('-w')) {
+                            output = words + '\n';
+                        } else if (options.includes('-c')) {
+                            output = chars + '\n';
+                        } else {
+                            output = `${lines} ${words} ${chars}`;
+                            if (files.length > 0) output += ` ${files[0]}`;
+                            output += '\n';
+                        }
+                    } else if (cmdName === 'rm') {
+                        if (!cleanArgs.length) throw new Error('rm: missing filename');
+                        const path = resolvePath(cleanArgs[0]);
+                        const parent = getNode(path.substring(0, path.lastIndexOf('/')) || '/');
+                        const name = path.substring(path.lastIndexOf('/') + 1);
+                        if (!parent || !parent.children || !parent.children[name]) {
+                            throw new Error(`rm: cannot remove '${cleanArgs[0]}'`);
+                        }
+                        delete parent.children[name];
+                        output = '';
+                    } else if (cmdName === 'mv') {
+                        if (cleanArgs.length < 2) throw new Error('mv: missing source or destination');
+                        const srcPath = resolvePath(cleanArgs[0]);
+                        const dstPath = resolvePath(cleanArgs[1]);
+                        
+                        const srcParent = getNode(srcPath.substring(0, srcPath.lastIndexOf('/')) || '/');
+                        const srcName = srcPath.substring(srcPath.lastIndexOf('/') + 1);
+                        
+                        if (!srcParent || !srcParent.children || !srcParent.children[srcName]) {
+                            throw new Error(`mv: cannot access '${cleanArgs[0]}'`);
+                        }
+                        
+                        const srcItem = srcParent.children[srcName];
+                        
+                        // Check if destination is a directory
+                        const dstNode = getNode(dstPath);
+                        if (dstNode && dstNode.type === 'dir') {
+                            // Move into directory
+                            if (!dstNode.children) dstNode.children = {};
+                            dstNode.children[srcName] = srcItem;
+                        } else {
+                            // Rename or move to new location
+                            const dstParent = getNode(dstPath.substring(0, dstPath.lastIndexOf('/')) || '/');
+                            const dstName = dstPath.substring(dstPath.lastIndexOf('/') + 1);
+                            if (!dstParent) throw new Error(`mv: cannot move to '${cleanArgs[1]}'`);
+                            if (!dstParent.children) dstParent.children = {};
+                            dstParent.children[dstName] = srcItem;
+                        }
+                        
+                        delete srcParent.children[srcName];
+                        output = '';
+                    } else if (cmdName === 'clear' || cmdName === 'cls') {
+                        // Clear terminal - special command handled in runCmd
+                        output = '__CLEAR__';
+                        } else if (cmdName === 'sh') {
+                            // Execute shell script: sh script.sh
+                            if (cleanArgs.length === 0) throw new Error('sh: missing script file');
+                            const scriptPath = resolvePath(cleanArgs[0]);
+                            const scriptNode = getNode(scriptPath);
+                            if (!scriptNode) throw new Error(`sh: cannot access '${cleanArgs[0]}'`);
+                            if (scriptNode.type !== 'file') throw new Error(`sh: '${cleanArgs[0]}': Is a directory`);
+        
+                            // Execute each line in the script
+                            const lines = scriptNode.content.split('\n').filter(l => l.trim() && !l.trim().startsWith('#'));
+                            let scriptOutput = '';
+                            for (const line of lines) {
+                                const res = executeCommand(line, scriptOutput);
+                                if (res.err) return { out: '', err: res.err };
+                                scriptOutput = res.out;
+                            }
+                            output = scriptOutput;
+                        } else {
+                            throw new Error(`${cmdName}: command not found`);
+                        }
+
+                    // Handle redirection
+                    if (redirectFile) {
+                        const filePath = resolvePath(redirectFile);
+                        const parent = getNode(filePath.substring(0, filePath.lastIndexOf('/')) || '/');
+                        const name = filePath.substring(filePath.lastIndexOf('/') + 1);
+                        if (!parent) throw new Error(`cannot write to ${redirectFile}`);
+                        if (!parent.children) parent.children = {};
+                        const content = output || input;
+                        parent.children[name] = {
+                            type: 'file',
+                            content: redirectAppend && parent.children[name] ? parent.children[name].content + content : content
+                        };
+                        return { out: '', err: '' };
+                    }
+                } catch (e) {
+                    return { out: '', err: e.message + '\n' };
+                }
+
+                return { out: output, err: '' };
+            }
+
+            function runCmd(cmdLine) {
+                if (!cmdLine.trim()) return;
+
+                cmdLine = cmdLine.replace(/\u00A0/g, ' ').trim();
+                if (cmdLine.includes('$')) {
+                    const lastDollar = cmdLine.lastIndexOf('$');
+                    cmdLine = cmdLine.substring(lastDollar + 1).trim();
+                }
+                cmdLine = cmdLine.replace(/^[>»]\s*/, '').trim();
+                if (!cmdLine) return;
+
+    // Check if it's a script file (e.g., hello.sh)
+    if (cmdLine.endsWith('.sh') && !cmdLine.includes(' ')) {
+        const scriptPath = resolvePath(cmdLine);
+        const scriptNode = getNode(scriptPath);
+        if (scriptNode && scriptNode.type === 'file') {
+            // Execute as script
+            cmdLine = 'sh ' + cmdLine;
+        }
+    }
+
+                cmdHistory.push(cmdLine);
+                historyIndex = cmdHistory.length;
+                cmdCount++;
+
+                // Execute with pipes
+                const cmds = splitPipe(cmdLine);
+                let input = '';
+                let lastError = '';
+
+                for (const cmd of cmds) {
+                    const result = executeCommand(cmd, input);
+                    if (result.err) {
+                        lastError = result.err;
+                        break;
+                    }
+                    input = result.out;
+                }
+
+                // Check for clear command
+                if (input === '__CLEAR__\n' || input === '__CLEAR__') {
+                    document.getElementById('outputArea').innerHTML = '';
+                    updateDisplay();
+                    saveFS();
+                    return;
+                }
+
+                // Display output
+                const outArea = document.getElementById('outputArea');
+                const displayCwd = cwd === '/' ? 'ubuntu' : cwd.substring(1);
+
+                const cmdDiv = document.createElement('div');
+                cmdDiv.className = 'cmd-output';
+                cmdDiv.innerHTML = `<div class="cmd-line"><span class="prompt">${displayCwd}$</span> <span class="cmd-text">${cmdLine}</span></div>`;
+                outArea.appendChild(cmdDiv);
+
+                if (lastError) {
+                    const errDiv = document.createElement('div');
+                    errDiv.innerHTML = `<div class="error-text">${lastError}</div>`;
+                    cmdDiv.appendChild(errDiv);
+                } else if (input.trim()) {
+                    const outDiv = document.createElement('div');
+                    outDiv.innerHTML = `<div class="output-text">${input}</div>`;
+                    cmdDiv.appendChild(outDiv);
+                }
+
+                outArea.scrollTop = outArea.scrollHeight;
+                updateDisplay();
+                saveFS();
+            }
+
+            // Initialize
+            loadFS();
+            updateDisplay();
+
+            const cmdInput = document.getElementById('cmdInput');
+            const runBtn = document.getElementById('runBtn');
+
+            runBtn.addEventListener('click', () => {
+                runCmd(cmdInput.value);
+                cmdInput.value = '';
+                cmdInput.focus();
+            });
+
+            cmdInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    runBtn.click();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (historyIndex > 0) {
+                        historyIndex--;
+                        cmdInput.value = cmdHistory[historyIndex];
+                    }
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (historyIndex < cmdHistory.length - 1) {
+                        historyIndex++;
+                        cmdInput.value = cmdHistory[historyIndex];
+                    } else {
+                        historyIndex = cmdHistory.length;
+                        cmdInput.value = '';
+                    }
+                }
+            });
+
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                fs = createFS();
+                cwd = '/';
+                cmdCount = 0;
+                cmdHistory = [];
+                historyIndex = -1;
+                document.getElementById('outputArea').innerHTML = '';
+                updateDisplay();
+                localStorage.removeItem('shellFS');
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                document.getElementById('outputArea').innerHTML = '';
+            });
+        })();
+    </script>
+</body>
+</html>
